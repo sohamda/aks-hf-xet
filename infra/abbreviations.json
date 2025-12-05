@@ -1,0 +1,6 @@
+{
+  "containerServiceManagedClusters": "aks-",
+  "resourcesResourceGroups": "rg-",
+  "managedIdentityUserAssignedIdentities": "id-",
+  "containerRegistryRegistries": "cr"
+}

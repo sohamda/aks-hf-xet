@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docling-model
+  namespace: docling
+  labels:
+    app: docling-model
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docling-model
+  template:
+    metadata:
+      labels:
+        app: docling-model
+    spec:
+      initContainers:
+        # Wait for model to be downloaded before starting main container
+        - name: wait-for-model
+          image: busybox:1.36
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for model download to complete..."
+              while [ ! -f /models/docling-project--docling-models/.download_complete ] || [ ! -f /models/docling-project--docling-layout-heron/.download_complete ]; do
+                echo "Models not ready yet, waiting..."
+                sleep 10
+              done
+              echo "Models are ready!"
+          volumeMounts:
+            - name: model-storage
+              mountPath: /models
+              readOnly: true
+      containers:
+        - name: docling
+          # Replace with your container registry image:
+          # - ACR: <your-acr>.azurecr.io/docling-api:latest
+          # - Docker Hub: <your-username>/docling-api:latest
+          image: <YOUR_REGISTRY>/docling-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+          resources:
+            requests:
+              memory: "4Gi"
+              cpu: "2000m"
+            limits:
+              memory: "8Gi"
+              cpu: "4000m"
+          env:
+            - name: DOCLING_ARTIFACTS_PATH
+              value: "/models"
+            - name: HF_HOME
+              value: "/models/.cache"
+            - name: HUGGINGFACE_HUB_CACHE
+              value: "/models/.cache"
+          volumeMounts:
+            - name: model-storage
+              mountPath: /models
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 20
+      volumes:
+        - name: model-storage
+          persistentVolumeClaim:
+            claimName: docling-models-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docling-model-service
+  namespace: docling
+  labels:
+    app: docling-model
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8000
+      protocol: TCP
+      name: http
+  selector:
+    app: docling-model

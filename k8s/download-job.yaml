@@ -1,0 +1,115 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: download-docling-model
+  namespace: docling
+  labels:
+    app: docling-model-downloader
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: docling-model-downloader
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: model-downloader
+          image: python:3.11-slim
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "=== Docling Model Download Job ==="
+              echo "Installing dependencies..."
+              pip install --no-cache-dir huggingface-hub hf_transfer
+              
+              echo ""
+              echo "Checking if models already exist..."
+              # Use Docling's expected folder naming convention: repo_id.replace("/", "--")
+              ARTIFACTS_DIR="/models"
+              TABLEFORMER_DIR="$ARTIFACTS_DIR/docling-project--docling-models"
+              LAYOUT_DIR="$ARTIFACTS_DIR/docling-project--docling-layout-heron"
+              
+              if [ -f "$TABLEFORMER_DIR/.download_complete" ] && [ -f "$LAYOUT_DIR/.download_complete" ]; then
+                echo "All models already downloaded. Skipping..."
+                exit 0
+              fi
+              
+              echo ""
+              echo "HF_HUB_ENABLE_HF_TRANSFER is set to: $HF_HUB_ENABLE_HF_TRANSFER"
+              
+              python -c "
+              from huggingface_hub import snapshot_download
+              import os
+              
+              # Base artifacts directory
+              artifacts_dir = '/models'
+              
+              # Download docling-models (tableformer for table structure)
+              # Docling expects: artifacts_path / 'docling-project--docling-models'
+              model_id = 'docling-project/docling-models'
+              local_dir = os.path.join(artifacts_dir, 'docling-project--docling-models')
+              
+              if not os.path.exists(os.path.join(local_dir, '.download_complete')):
+                  print(f'Downloading {model_id} to {local_dir}...')
+                  snapshot_download(
+                      repo_id=model_id,
+                      local_dir=local_dir,
+                      local_dir_use_symlinks=False,
+                  )
+                  with open(os.path.join(local_dir, '.download_complete'), 'w') as f:
+                      f.write('done')
+                  print(f'{model_id} download complete!')
+              else:
+                  print(f'{model_id} already exists, skipping.')
+              
+              # Download layout model (required for PDF parsing)
+              # Docling expects: artifacts_path / 'docling-project--docling-layout-heron'
+              layout_model_id = 'docling-project/docling-layout-heron'
+              layout_dir = os.path.join(artifacts_dir, 'docling-project--docling-layout-heron')
+              
+              if not os.path.exists(os.path.join(layout_dir, '.download_complete')):
+                  print(f'Downloading {layout_model_id} to {layout_dir}...')
+                  snapshot_download(
+                      repo_id=layout_model_id,
+                      local_dir=layout_dir,
+                      local_dir_use_symlinks=False,
+                  )
+                  with open(os.path.join(layout_dir, '.download_complete'), 'w') as f:
+                      f.write('done')
+                  print(f'{layout_model_id} download complete!')
+              else:
+                  print(f'{layout_model_id} already exists, skipping.')
+              
+              print('All downloads complete!')
+              "
+              
+              echo ""
+              echo "=== Download Complete ==="
+              echo "Tableformer model files:"
+              ls -la /models/docling-project--docling-models/
+              echo ""
+              echo "Layout model files:"
+              ls -la /models/docling-project--docling-layout-heron/
+          env:
+            - name: HF_HOME
+              value: "/models/.cache"
+            - name: HF_HUB_ENABLE_HF_TRANSFER
+              value: "1"
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1000m"
+            limits:
+              memory: "4Gi"
+              cpu: "2000m"
+          volumeMounts:
+            - name: model-storage
+              mountPath: /models
+      volumes:
+        - name: model-storage
+          persistentVolumeClaim:
+            claimName: docling-models-pvc

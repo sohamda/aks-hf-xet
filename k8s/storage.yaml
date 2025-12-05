@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: azure-storage-secret
+  namespace: docling
+type: Opaque
+stringData:
+  azurestorageaccountname: ${STORAGE_ACCOUNT_NAME}
+  azurestorageaccountkey: ${STORAGE_ACCOUNT_KEY}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: docling-models-pv
+  labels:
+    usage: docling-models
+spec:
+  capacity:
+    storage: 50Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  csi:
+    driver: file.csi.azure.com
+    readOnly: false
+    volumeHandle: docling-models-unique-${STORAGE_ACCOUNT_NAME}
+    volumeAttributes:
+      storageAccount: ${STORAGE_ACCOUNT_NAME}
+      shareName: models
+    nodeStageSecretRef:
+      name: azure-storage-secret
+      namespace: docling
+  mountOptions:
+    - dir_mode=0777
+    - file_mode=0777
+    - uid=0
+    - gid=0
+    - mfsymlinks
+    - actimeo=30
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: docling-models-pvc
+  namespace: docling
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: docling-models-pv
+  resources:
+    requests:
+      storage: 50Gi
