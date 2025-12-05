@@ -1,4 +1,8 @@
-# Docling on AKS
+# Deploying Hugging Face model using Xet to download and deploy on AKS
+
+[HF link](https://huggingface.co/docling-project/docling-models)
+
+## Docling on AKS
 
 Deploy [Docling](https://github.com/DS4SD/docling) document processing API on Azure Kubernetes Service (AKS) with pre-downloaded models from Hugging Face stored on Azure Files.
 
