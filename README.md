@@ -15,26 +15,73 @@ Docling is a document processing library that converts PDFs and other documents 
 
 ## Architecture
 
+```mermaid
+flowchart TB
+    subgraph DEV["Developer Machine"]
+        A[azd up] --> B[Provision Infrastructure]
+        A --> C[Build Docker Image]
+    end
+
+    subgraph AZURE["Azure"]
+        subgraph INFRA["Infrastructure via Bicep"]
+            B --> RG[Resource Group]
+            RG --> AKS[AKS Cluster]
+            RG --> ACR[Container Registry]
+            RG --> STORAGE[Storage Account]
+        end
+
+        subgraph ACR_BOX["Azure Container Registry"]
+            C --> IMG[docling-api:latest]
+        end
+
+        subgraph AKS_BOX["AKS Cluster"]
+            subgraph NS["docling namespace"]
+                JOB[Download Job] -->|downloads models| PVC[(Azure Files PVC)]
+                POD[Docling API Pod] -->|reads models| PVC
+                SVC[LoadBalancer Service] --> POD
+            end
+        end
+
+        IMG -->|pulled by| POD
+        STORAGE -->|mounted as| PVC
+    end
+
+    subgraph CLIENT["Client"]
+        USER[User] -->|POST /convert| SVC
+        SVC -->|JSON response| USER
+    end
+
+    style DEV fill:#e1f5fe
+    style AZURE fill:#fff3e0
+    style CLIENT fill:#e8f5e9
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                              Azure                                   │
-│                                                                      │
-│  ┌──────────────┐     ┌─────────────────────────────────────────┐   │
-│  │     ACR      │     │              AKS Cluster                │   │
-│  │ ┌──────────┐ │     │                                         │   │
-│  │ │ docling- │ │     │  ┌─────────────┐    ┌───────────────┐   │   │
-│  │ │   api    │─┼────►│  │ Download Job│───►│ Azure Files   │   │   │
-│  │ └──────────┘ │     │  │  (one-time) │    │   (models)    │   │   │
-│  └──────────────┘     │  └─────────────┘    └───────┬───────┘   │   │
-│                       │                             │           │   │
-│  ┌──────────────┐     │  ┌─────────────────────────▼───────┐   │   │
-│  │   Storage    │     │  │         Docling API Pod         │   │   │
-│  │   Account    │◄────┼──│  • FastAPI server               │   │   │
-│  └──────────────┘     │  │  • /convert endpoint            │   │   │
-│                       │  │  • Pre-loaded models            │   │   │
-│                       │  └─────────────────────────────────┘   │   │
-│                       └─────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────┘
+
+### Deployment Flow
+
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant AZD as azd CLI
+    participant Azure as Azure
+    participant ACR as Container Registry
+    participant AKS as AKS Cluster
+    participant HF as Hugging Face
+
+    Dev->>AZD: azd up
+    AZD->>Azure: Provision (Bicep)
+    Azure-->>AZD: AKS, ACR, Storage created
+    
+    AZD->>ACR: docker build & push
+    ACR-->>AZD: Image pushed
+    
+    AZD->>AKS: kubectl apply manifests
+    AKS->>HF: Download Job fetches models
+    HF-->>AKS: Models stored in Azure Files
+    
+    AKS->>ACR: Pull docling-api image
+    ACR-->>AKS: Image pulled
+    
+    AKS-->>Dev: Service ready at External IP
 ```
 
 ## Project Structure

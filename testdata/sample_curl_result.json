@@ -1,0 +1,90 @@
+{
+    "status": "success",
+    "message": "Document converted successfully",
+    "result": {
+        "document": "version=DoclingVersion(...)",
+        "timestamp": null,
+        "status": "success",
+        "errors": [],
+        "pages": [
+            {
+                "page_no": 0,
+                "size": {
+                    "width": 595.32,
+                    "height": 841.92
+                },
+                "predictions": {
+                    "layout": {
+                        "clusters": [
+                            {
+                                "id": 8,
+                                "label": "text",
+                                "bbox": {
+                                    "l": 70.824,
+                                    "t": 174.14,
+                                    "r": 515.712,
+                                    "b": 199.965
+                                },
+                                "confidence": 0.827,
+                                "text": "Om de monteurs goed te kunnen laten starten met de werkzaamheden, zou het fijn zijn als u rekening wilt houden met de volgende punten:"
+                            },
+                            {
+                                "id": 4,
+                                "label": "list_item",
+                                "confidence": 0.919,
+                                "text": "Bij eventuele parkeermogelijkheden nabij de woning, graag ruimte vrij houden voor de bus en evt. aanhanger/pannenlift/steiger"
+                            },
+                            {
+                                "id": 6,
+                                "label": "list_item",
+                                "confidence": 0.871,
+                                "text": "Graag ervoor zorgen dat de meterkast, goed bereikbaar is"
+                            },
+                            {
+                                "id": 7,
+                                "label": "list_item",
+                                "confidence": 0.861,
+                                "text": "Wachtwoord van de wifi klaarleggen"
+                            },
+                            {
+                                "id": 3,
+                                "label": "list_item",
+                                "confidence": 0.923,
+                                "text": "Mocht u huisdieren hebben, hou deze graag binnen. Dan kan er ook niets met ze gebeuren mocht er iets vallen of ze lopen onverhoopt in de weg."
+                            },
+                            {
+                                "id": 5,
+                                "label": "list_item",
+                                "confidence": 0.915,
+                                "text": "Veiligheid staat altijd voorop, dus bij harde wind en gladheid gaan onze collega's het dak niet op, maar plannen we een nieuwe afspraak met u."
+                            },
+                            {
+                                "id": 1,
+                                "label": "list_item",
+                                "confidence": 0.939,
+                                "text": "Om de opbrengsten van uw installatie op de app te kunnen aflezen, wordt er binnen 5 dagen na de installatie een account aangemaakt en ontvangt u de gegevens per email."
+                            },
+                            {
+                                "id": 2,
+                                "label": "list_item",
+                                "confidence": 0.932,
+                                "text": "Uit veiligheidsoogpunt is het tijdens de montage verboden om onder een steiger/ladder door te lopen of boven naar het dak te gaan. De kans dat er dakpannen of gereedschap naar beneden vallen tijdens de montage, is aanwezig."
+                            },
+                            {
+                                "id": 0,
+                                "label": "list_item",
+                                "confidence": 0.946,
+                                "text": "Heb je een dak met dakpannen? Het kan altijd gebeuren dat er tijdens de installatie een dakpan sneuvelt. In dat geval is het handig als jij een reserve dakpan hebt klaarliggen. En als we toch op je dak staan en we zien dat er een kapotte dakpan ligt, vervangen we deze ook gelijk voor je."
+                            },
+                            {
+                                "id": 9,
+                                "label": "picture",
+                                "confidence": 0.821
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    }
+}
