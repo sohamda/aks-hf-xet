@@ -39,7 +39,6 @@ RESOURCE_GROUP=$(get_config_value "AZURE_RESOURCE_GROUP")
 CLUSTER_NAME=$(get_config_value "AKS_CLUSTER_NAME")
 NAMESPACE=$(get_config_value "KUBERNETES_NAMESPACE" "docling")
 STORAGE_ACCOUNT_NAME=$(get_config_value "STORAGE_ACCOUNT_NAME")
-STORAGE_ACCOUNT_KEY=$(get_config_value "STORAGE_ACCOUNT_KEY")
 ACR_NAME=$(get_config_value "ACR_NAME")
 ACR_LOGIN_SERVER=$(get_config_value "ACR_LOGIN_SERVER")
 
@@ -92,9 +91,9 @@ echo ""
 echo "Applying Kubernetes manifests..."
 kubectl apply -f "$K8S_DIR/namespace.yaml"
 
-# Apply storage with substituted values
+# Apply storage with substituted values (CSI driver uses managed identity to get storage key)
 sed -e "s/\${STORAGE_ACCOUNT_NAME}/$STORAGE_ACCOUNT_NAME/g" \
-    -e "s/\${STORAGE_ACCOUNT_KEY}/$STORAGE_ACCOUNT_KEY/g" \
+    -e "s/\${AZURE_RESOURCE_GROUP}/$RESOURCE_GROUP/g" \
     "$K8S_DIR/storage.yaml" | kubectl apply -f -
 
 # Model download job
