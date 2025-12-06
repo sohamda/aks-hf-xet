@@ -92,13 +92,14 @@ aks-hf-xet/
 ├── infra/                  # Infrastructure (Bicep)
 │   ├── main.bicep          # Main template
 │   └── modules/
-│       ├── aks.bicep       # AKS cluster
+│       ├── aks.bicep       # AKS cluster (with OIDC & workload identity)
 │       ├── acr.bicep       # Container Registry
 │       ├── storage.bicep   # Storage account
-│       └── aks-acr-role.bicep
+│       ├── aks-acr-role.bicep    # AKS → ACR pull permissions
+│       └── aks-storage-role.bicep # AKS → Storage managed identity permissions
 ├── k8s/                    # Kubernetes manifests
 │   ├── namespace.yaml
-│   ├── storage.yaml        # PV/PVC for Azure Files
+│   ├── storage.yaml        # PV/PVC for Azure Files (managed identity)
 │   ├── download-job.yaml   # Model download job
 │   └── deployment.yaml     # API deployment + service
 ├── scripts/
@@ -176,6 +177,34 @@ curl http://<service-url>/health
 
 # Convert a PDF document
 curl -X POST "http://<service-url>/convert" -F "file=@./testdata/dutch_pdf.pdf"
+```
+
+## Security
+
+### Managed Identity for Storage
+
+This deployment uses **AKS Managed Identity** to access Azure Storage instead of storage account keys. This provides:
+
+- **No secrets in Kubernetes** - No storage keys stored in Secrets or ConfigMaps
+- **Automatic credential rotation** - Azure handles credential lifecycle
+- **Audit trail** - All access is logged via Azure AD
+- **Least privilege** - Only the required roles are assigned
+
+#### How it works
+
+1. **AKS Cluster** is provisioned with OIDC issuer and workload identity enabled
+2. **AKS Kubelet Identity** is granted the following roles on the Storage Account:
+   - `Storage Account Contributor` - Allows CSI driver to retrieve storage keys
+   - `Storage File Data SMB Share Contributor` - Allows file share access
+3. **Azure Files CSI Driver** uses `getLatestAccountKey: "true"` to automatically retrieve storage keys using the managed identity
+4. **No storage keys** are stored in Kubernetes manifests or secrets
+
+#### Role Assignments (via Bicep)
+
+```bicep
+// infra/modules/aks-storage-role.bicep
+- Storage File Data SMB Share Contributor (0c867c2a-1d8c-454a-a3db-ab2ea1bdc8bb)
+- Storage Account Contributor (17d1049b-9a84-46fb-8f53-869881c3d3ab)
 ```
 
 ## Configuration
