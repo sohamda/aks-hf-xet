@@ -26,7 +26,6 @@ $ResourceGroup = Get-ConfigValue "AZURE_RESOURCE_GROUP"
 $ClusterName = Get-ConfigValue "AKS_CLUSTER_NAME"
 $Namespace = Get-ConfigValue "KUBERNETES_NAMESPACE" "docling"
 $StorageAccountName = Get-ConfigValue "STORAGE_ACCOUNT_NAME"
-$StorageAccountKey = Get-ConfigValue "STORAGE_ACCOUNT_KEY"
 $AcrName = Get-ConfigValue "ACR_NAME"
 $AcrLoginServer = Get-ConfigValue "ACR_LOGIN_SERVER"
 
@@ -73,10 +72,10 @@ az aks get-credentials --resource-group $ResourceGroup --name $ClusterName --ove
 Write-Host "`nApplying Kubernetes manifests..." -ForegroundColor Green
 kubectl apply -f (Join-Path $K8sDir "namespace.yaml")
 
-# Apply storage with substituted values
+# Apply storage with substituted values (CSI driver uses managed identity to get storage key)
 (Get-Content (Join-Path $K8sDir "storage.yaml") -Raw) `
     -replace '\$\{STORAGE_ACCOUNT_NAME\}', $StorageAccountName `
-    -replace '\$\{STORAGE_ACCOUNT_KEY\}', $StorageAccountKey | kubectl apply -f -
+    -replace '\$\{AZURE_RESOURCE_GROUP\}', $ResourceGroup | kubectl apply -f -
 
 # Model download job
 Write-Host "`nStarting model download job..." -ForegroundColor Green

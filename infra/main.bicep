@@ -91,13 +91,23 @@ module aksAcrRoleAssignment './modules/aks-acr-role.bicep' = {
   }
 }
 
+// Role assignment: AKS to access Azure Storage via managed identity
+module aksStorageRoleAssignment './modules/aks-storage-role.bicep' = {
+  name: 'aks-storage-role-assignment'
+  scope: rg
+  params: {
+    aksKubeletIdentityObjectId: aks.outputs.clusterKubeletIdentityObjectId
+    storageAccountName: storage.outputs.storageAccountName
+  }
+}
+
 output AZURE_LOCATION string = location
 output AZURE_RESOURCE_GROUP string = rg.name
 output AKS_CLUSTER_NAME string = aks.outputs.clusterName
 output AKS_CLUSTER_FQDN string = aks.outputs.clusterFqdn
 output KUBERNETES_NAMESPACE string = kubernetesNamespace
 output STORAGE_ACCOUNT_NAME string = storage.outputs.storageAccountName
-output STORAGE_ACCOUNT_KEY string = storage.outputs.storageAccountKey
 output FILE_SHARE_NAME string = storage.outputs.fileShareName
 output ACR_NAME string = acr.outputs.acrName
 output ACR_LOGIN_SERVER string = acr.outputs.acrLoginServer
+output AKS_KUBELET_CLIENT_ID string = aks.outputs.clusterKubeletIdentityClientId

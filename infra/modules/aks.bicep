@@ -46,6 +46,15 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-01-01' = {
       networkPlugin: 'azure'
       loadBalancerSku: 'standard'
     }
+    // Enable OIDC issuer and workload identity for managed identity authentication
+    oidcIssuerProfile: {
+      enabled: true
+    }
+    securityProfile: {
+      workloadIdentity: {
+        enabled: true
+      }
+    }
   }
 }
 
@@ -53,3 +62,4 @@ output clusterName string = aksCluster.name
 output clusterFqdn string = aksCluster.properties.fqdn
 output clusterIdentityPrincipalId string = aksCluster.identity.principalId
 output clusterKubeletIdentityObjectId string = aksCluster.properties.identityProfile.kubeletidentity.objectId
+output clusterKubeletIdentityClientId string = aksCluster.properties.identityProfile.kubeletidentity.clientId

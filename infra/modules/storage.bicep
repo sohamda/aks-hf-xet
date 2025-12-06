@@ -26,7 +26,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     supportsHttpsTrafficOnly: true
     minimumTlsVersion: 'TLS1_2'
     allowBlobPublicAccess: false
-    allowSharedKeyAccess: true  // Required for AKS to mount Azure Files
+    allowSharedKeyAccess: true  // CSI driver uses managed identity to retrieve storage key
     networkAcls: {
       defaultAction: 'Allow'
       bypass: 'AzureServices'
@@ -51,4 +51,3 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
 output storageAccountName string = storageAccount.name
 output storageAccountId string = storageAccount.id
 output fileShareName string = fileShareName
-output storageAccountKey string = storageAccount.listKeys().keys[0].value
