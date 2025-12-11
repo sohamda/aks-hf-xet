@@ -63,7 +63,7 @@ fi
 if command -v pwsh &> /dev/null; then
     if pwsh -Command "Get-Module -ListAvailable PSScriptAnalyzer" &> /dev/null; then
         run_check "PSScriptAnalyzer (PowerShell)" \
-            "pwsh -Command \"Invoke-ScriptAnalyzer -Path scripts/deploy.ps1 -Severity Error | Out-Null; if (\\\$?) { exit 0 } else { exit 1 }\""
+            "pwsh -File tests/run-psscriptanalyzer.ps1"
     else
         echo -e "${YELLOW}⚠ SKIPPED: PSScriptAnalyzer module not installed${NC}"
         echo "  Install with: pwsh -Command \"Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser\""
@@ -88,7 +88,7 @@ fi
 if command -v pwsh &> /dev/null; then
     if pwsh -Command "Get-Module -ListAvailable Pester" &> /dev/null; then
         run_check "Pester Tests (PowerShell)" \
-            "pwsh -Command \"Import-Module Pester; \\\$config = New-PesterConfiguration; \\\$config.Run.Path = 'tests/deploy.Tests.ps1'; \\\$config.Run.Exit = \\\$true; \\\$config.Output.Verbosity = 'Detailed'; Invoke-Pester -Configuration \\\$config\""
+            "pwsh -File tests/run-pester.ps1"
     else
         echo -e "${YELLOW}⚠ SKIPPED: Pester module not installed${NC}"
         echo "  Install with: pwsh -Command \"Install-Module -Name Pester -Force -Scope CurrentUser -MinimumVersion 5.0.0\""
