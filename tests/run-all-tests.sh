@@ -52,7 +52,7 @@ if command -v az &> /dev/null; then
     
     for bicep_file in infra/modules/*.bicep; do
         filename=$(basename "$bicep_file")
-        run_check "Bicep Lint ($filename)" "az bicep lint --file '$bicep_file'"
+        run_check "Bicep Lint ($filename)" "az bicep lint --file \"$bicep_file\""
     done
 else
     echo -e "${YELLOW}⚠ SKIPPED: Azure CLI not installed${NC}"
