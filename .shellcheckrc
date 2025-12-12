@@ -1,0 +1,8 @@
+# ShellCheck configuration file
+# See https://github.com/koalaman/shellcheck/wiki/Ignore
+
+# Disable specific checks if needed
+# Format: disable=SC####
+
+# External sources can't be checked
+disable=SC1091

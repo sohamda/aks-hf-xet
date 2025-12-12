@@ -235,6 +235,38 @@ Customize via `azd env set` before provisioning.
 azd down
 ```
 
+## Development and Testing
+
+### Running Tests and Linters
+
+This repository includes comprehensive tests and linters for all infrastructure scripts:
+
+```bash
+# Run all tests and linters
+./tests/run-all-tests.sh
+
+# Run specific test suites
+bats tests/deploy.bats              # Bash script tests
+bats tests/bicep.bats               # Bicep template tests
+pwsh -Command "Invoke-Pester -Path tests/deploy.Tests.ps1"  # PowerShell tests
+
+# Run linters
+shellcheck scripts/deploy.sh                               # Bash linting
+az bicep lint --file infra/main.bicep                      # Bicep linting
+pwsh -Command "Invoke-ScriptAnalyzer -Path scripts/deploy.ps1"  # PowerShell linting
+```
+
+For detailed testing documentation, see [tests/README.md](tests/README.md).
+
+### Continuous Integration
+
+All infrastructure scripts are automatically tested on every push and pull request via GitHub Actions. The CI pipeline runs:
+- ShellCheck for bash scripts
+- PSScriptAnalyzer for PowerShell scripts  
+- Bicep linter for infrastructure templates
+- BATS tests for script validation
+- Pester tests for PowerShell validation
+
 ## Troubleshooting
 
 ```bash

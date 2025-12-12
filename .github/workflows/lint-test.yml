@@ -1,0 +1,130 @@
+name: Lint and Test Infrastructure Scripts
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'scripts/**'
+      - 'infra/**'
+      - 'tests/**'
+      - '.github/workflows/lint-test.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'scripts/**'
+      - 'infra/**'
+      - 'tests/**'
+      - '.github/workflows/lint-test.yml'
+
+jobs:
+  shellcheck:
+    name: ShellCheck - Bash Scripts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: './scripts'
+          severity: warning
+
+  bicep-lint:
+    name: Bicep Linter
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Bicep CLI
+        run: az bicep install
+
+      - name: Lint main.bicep
+        run: az bicep lint --file infra/main.bicep
+
+      - name: Lint module files
+        run: |
+          for bicep_file in infra/modules/*.bicep; do
+            echo "Linting $bicep_file"
+            az bicep lint --file "$bicep_file"
+          done
+
+  powershell-lint:
+    name: PSScriptAnalyzer - PowerShell Scripts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install PSScriptAnalyzer module
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+
+      - name: Run PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          $results = Invoke-ScriptAnalyzer -Path scripts/deploy.ps1 -Severity Error
+          if ($results.Count -gt 0) {
+            $results | Format-Table -AutoSize
+            exit 1
+          }
+          Write-Host "No errors found"
+
+  bats-tests:
+    name: BATS Tests - Bash and Bicep
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup BATS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Setup Azure CLI for Bicep tests
+        run: |
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          az bicep install
+
+      - name: Run BATS tests for deploy.sh
+        run: bats tests/deploy.bats
+
+      - name: Run BATS tests for Bicep templates
+        run: bats tests/bicep.bats
+
+  pester-tests:
+    name: Pester Tests - PowerShell
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Pester module
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module -Name Pester -Force -Scope CurrentUser -MinimumVersion 5.0.0
+
+      - name: Run Pester tests
+        shell: pwsh
+        run: |
+          Import-Module Pester
+          $config = New-PesterConfiguration
+          $config.Run.Path = 'tests/deploy.Tests.ps1'
+          $config.Run.Exit = $true
+          $config.Output.Verbosity = 'Detailed'
+          Invoke-Pester -Configuration $config
